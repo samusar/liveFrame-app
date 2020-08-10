@@ -1,12 +1,34 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, Image, TouchableOpacity, ScrollView} from 'react-native';
 import {Feather as Icon} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
 
+import api from '../../config/api';
+
 import style from './styles';
 
+interface Content {
+  id: number;
+  content_id: number;
+}
+
 const Cult: React.FC = () => {
+  const [contents, setContents] = useState<Content[]>([]);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    api.get<Content[]>('/cult').then(response => {
+      setContents(response.data);
+    });
+
+  }, []);
+
+  const handleSetContentLive = (id: number) => {
+    api.get('/live/content/' + id).then(response => {
+      navigation.navigate('Live', {id});
+    });
+  };
+
   return (
     <ScrollView style={style.containerScroll}>
       <View style={style.container}>
@@ -26,27 +48,30 @@ const Cult: React.FC = () => {
             Selecione o conteúdo para transmitir:
           </Text>
           <Text style={[style.textTitleTable, {marginHorizontal: 20}]}>
-            Total: 5
+            Total: {contents.length}
           </Text>
         </View>
-        <View style={style.containerItem}>
-          <Text style={style.textIdItem}>
-            1
-          </Text>
-          <TouchableOpacity 
-            style={{flex: 1, height: 70, justifyContent: 'center'}}
-            onPress={() => navigation.navigate('Live')}
-          >
-            <Text style={style.textDescriptionItem}>
-              Vai valer a pena
+        {contents.map(content => (
+          <View key={content.id} style={style.containerItem}>
+            <Text style={style.textIdItem}>
+              {content.id}
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={style.textExcludeItem}>
-              Excluir
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity 
+              style={{flex: 1, height: 70, justifyContent: 'center'}}
+              onPress={() => handleSetContentLive(content.content_id)}
+            >
+              <Text style={style.textDescriptionItem}>
+                {content.content_id}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Text style={style.textExcludeItem}>
+                Excluir
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+        
       </View>
     </ScrollView>
   );

@@ -1,13 +1,27 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Text, Image, TouchableOpacity, ScrollView} from 'react-native';
 import {Feather as Icon} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
 import { RadioButton } from 'react-native-paper';
+import api from '../../config/api';
 
 import style from './styles';
 
+interface ContentLive {
+  id: number;
+  content_id: number;
+  description: string;
+  order_number: number;
+}
+
 const Live: React.FC = () => {
   const navigation = useNavigation();
+  const [contentLive, setContentLive] = useState<ContentLive[]>([]);
+  const [slideLive, setSlideLIve] = useState(1);
+
+  useEffect(() => {
+    api.get('/')
+  }, [])
   return (
     <ScrollView style={style.containerScroll}>
       <View style={style.container}>
@@ -21,13 +35,13 @@ const Live: React.FC = () => {
           <Text style={style.textHeaderBold}>
             Apresentação ao vivo:
           </Text>
-          <Text style={style.textHeaderLight}> Vai valer a pena</Text>
+          <Text style={style.textHeaderLight}></Text>
         </View>
       </View>
       <View style={style.previewContainer}>
         <View style={style.previewContent}>
           <Text style={style.textPreview}>
-            Não compreendo os teus caminhos mas te darei a minha canção
+            {contentLive.find(content => (content.order_number === slideLive))?.description}
           </Text>
           <View style={style.bannerLive}>
             <Icon name='play' color='#BF1919' />
