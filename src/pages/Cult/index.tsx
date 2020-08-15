@@ -10,6 +10,7 @@ import style from './styles';
 interface Content {
   id: number;
   content_id: number;
+  title: string;
 }
 
 const Cult: React.FC = () => {
@@ -25,7 +26,7 @@ const Cult: React.FC = () => {
 
   const handleSetContentLive = (id: number) => {
     api.get('/live/content/' + id).then(response => {
-      navigation.navigate('Live', {id});
+      navigation.navigate('Live');
     });
   };
 
@@ -61,7 +62,7 @@ const Cult: React.FC = () => {
               onPress={() => handleSetContentLive(content.content_id)}
             >
               <Text style={style.textDescriptionItem}>
-                {content.content_id}
+                {content.title}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity>
