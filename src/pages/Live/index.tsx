@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { RadioButton } from 'react-native-paper';
 import io from 'socket.io-client';
 
+import logoImg from '../../assets/logo.png';
 import api from '../../config/api';
 
 import style from './styles';
@@ -37,12 +38,15 @@ const Live: React.FC = () => {
 
   useEffect(() => {
     console.log('executei o effect');
-    const socket = io('http://192.168.1.3:3333');
+    const socket = io('http://192.168.1.6:3333');
     socket.on('update-content', function (data: Live) {
       if (data.slides.length > 0) {
-        console.log(data);
+        const slidesStrings = data.slides.map(slide => {
+          return slide.replaceAll('<br />', ' ');
+        });
+
         setSlideActive(data.positionSlide);
-        setContentLive(data.slides);
+        setContentLive(slidesStrings);
         setVisibilityLive(data.visible);
       }
     });
@@ -70,7 +74,7 @@ const Live: React.FC = () => {
           />
         </TouchableOpacity>
         <View style={style.header}>
-          <Image source={require('../../assets/logo.png')} />
+          <Image source={logoImg} />
         </View>
         <View
           style={{
