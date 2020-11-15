@@ -1,66 +1,66 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Feather as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { RadioButton } from 'react-native-paper';
-import io from 'socket.io-client';
+import { useSocket } from '../../hooks/SocketContext';
 
 import logoImg from '../../assets/logo.png';
 import api from '../../config/api';
 
 import style from './styles';
 
-interface Live {
-  positionSlide: number;
-  slides: string[];
-  visible: boolean;
-}
-
 const Live: React.FC = () => {
   const navigation = useNavigation();
-  const [contentLive, setContentLive] = useState<string[]>([]);
+  const [contentLiveState, setContentLiveState] = useState<string[]>([]);
   const [slideActive, setSlideActive] = useState(0);
   const [visibilityLive, setVisibilityLive] = useState(false);
 
+  const { contentLive, visibility, numberSlideShow } = useSocket();
+
   const alterSlide = useCallback(
     async (slideNumber: number) => {
-      if (slideNumber >= 0 && slideNumber < contentLive.length) {
+      if (slideNumber >= 0 && slideNumber < contentLiveState.length) {
         await api.get(`/live/slide/${slideNumber}`);
       }
     },
-    [contentLive],
+    [contentLiveState],
   );
 
-  const alterVisibility = useCallback(async () => {
-    const visibilityParam = visibilityLive ? 'false' : 'true';
-    await api.get(`/live?visibility=${visibilityParam}`);
-  }, [visibilityLive]);
+  const resetPresentation = useCallback(async () => {
+    await api.get(`/live/slide/0`);
+    await api.get(`/live?visibility=false`);
+  }, []);
+
+  const alterVisibility = useCallback(async visibilityParams => {
+    await api.get(`/live?visibility=${visibilityParams}`);
+  }, []);
 
   useEffect(() => {
     console.log('executei o effect');
-    const socket = io('http://192.168.1.6:3333');
-    socket.on('update-content', function (data: Live) {
-      if (data.slides.length > 0) {
-        const slidesStrings = data.slides.map(slide => {
-          return slide.replaceAll('<br />', ' ');
-        });
 
-        setSlideActive(data.positionSlide);
-        setContentLive(slidesStrings);
-        setVisibilityLive(data.visible);
-      }
-    });
+    if (contentLive) {
+      const slides = contentLive.slides.map(slide => {
+        return slide.replace('<br />', '\n');
+      });
 
-    socket.on('next-slide', function (nextSlideNumber: number) {
-      console.log('recebi next', nextSlideNumber);
-      setSlideActive(nextSlideNumber);
-    });
+      setContentLiveState(slides);
+      setSlideActive(contentLive.positionSlide);
+      setVisibilityLive(contentLive.visible);
+    }
 
-    socket.on('visible-content', function (visibility: boolean) {
-      console.log('recebi visible', visibility);
-      setVisibilityLive(visibility);
-    });
-  }, []);
+    return () => {
+      resetPresentation();
+    };
+  }, [contentLive, resetPresentation]);
+
+  useEffect(() => {
+    setVisibilityLive(visibility);
+  }, [visibility]);
+
+  useEffect(() => {
+    setSlideActive(numberSlideShow);
+  }, [numberSlideShow]);
 
   return (
     <ScrollView style={style.containerScroll}>
@@ -91,8 +91,8 @@ const Live: React.FC = () => {
       <View style={style.previewContainer}>
         <View style={style.previewContent}>
           <Text style={style.textPreview}>
-            {contentLive[slideActive] && visibilityLive
-              ? contentLive[slideActive]
+            {contentLiveState[slideActive] && visibilityLive
+              ? contentLiveState[slideActive]
               : ''}
           </Text>
           <View style={style.bannerLive}>
@@ -103,7 +103,7 @@ const Live: React.FC = () => {
           </View>
         </View>
         <Text style={style.textIndexHeader}>
-          {slideActive + 1} /{contentLive.length}
+          {slideActive + 1} /{contentLiveState.length}
         </Text>
         <View style={style.containerOptions}>
           <TouchableOpacity
@@ -118,7 +118,9 @@ const Live: React.FC = () => {
           <View
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
           >
-            <TouchableOpacity onPress={alterVisibility}>
+            <TouchableOpacity
+              onPress={() => alterVisibility(visibilityLive ? 'false' : 'true')}
+            >
               <Icon
                 name={visibilityLive ? 'eye' : 'eye-off'}
                 size={40}
@@ -143,10 +145,10 @@ const Live: React.FC = () => {
             Slides da transmição:
           </Text>
           <Text style={[style.textTitleTable, { marginHorizontal: 20 }]}>
-            Total: {contentLive.length}
+            Total: {contentLiveState.length}
           </Text>
         </View>
-        {contentLive.map((slide, index) => (
+        {contentLiveState.map((slide, index) => (
           <TouchableOpacity key={index} onPress={() => alterSlide(index)}>
             <View style={style.containerItem}>
               <Text style={style.textIdItem}>{index + 1}</Text>
@@ -155,7 +157,7 @@ const Live: React.FC = () => {
                 <RadioButton
                   value={slide}
                   status={index === slideActive ? 'checked' : 'unchecked'}
-                  onPress={() => {}}
+                  onPress={() => alterSlide(index)}
                   color="#FF7A00"
                   uncheckedColor="#A4A4A4"
                 />

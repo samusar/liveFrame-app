@@ -13,8 +13,17 @@ const Home = () => {
         <Image source={require('../../assets/logo.png')} />
       </View>
       <View style={style.main}>
-        <Button text="TRANSMISSÃO" onPress={() => navigation.navigate('Cult')} icon="monitor" />
-        <Button text="EDITAR CONTEÚDO" onPress={() => {}} icon="edit-2" style={{marginTop: 20}} />
+        <Button
+          text="TRANSMISSÃO"
+          onPress={() => navigation.navigate('Cult')}
+          icon="monitor"
+        />
+        <Button
+          text="EDITAR CONTEÚDO"
+          onPress={() => {}}
+          icon="edit-2"
+          style={{ marginTop: 20 }}
+        />
       </View>
     </View>
   );
