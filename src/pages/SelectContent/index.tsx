@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Feather as Icon } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 import api from '../../config/api';
 
@@ -9,42 +9,30 @@ import style from './styles';
 
 interface Content {
   id: number;
-  content_id: number;
   title: string;
 }
 
-const Cult: React.FC = () => {
+const SelectContent: React.FC = () => {
   const [contents, setContents] = useState<Content[]>([]);
   const navigation = useNavigation();
 
-  useFocusEffect(
-    React.useCallback(() => {
-      api.get<Content[]>('/cult').then(response => {
-        setContents(response.data);
-      });
-    }, []),
-  );
-
-  const handleSetContentLive = (id: number) => {
-    api.get(`/live/content/${id}`).then(() => {
-      navigation.navigate('Live');
+  useEffect(() => {
+    api.get<Content[]>('/content').then(response => {
+      setContents(response.data);
     });
-  };
+  }, []);
 
-  const handleRemoveContentCult = useCallback(
+  const handleSetContentLive = useCallback(
     (id: number) => {
-      api.delete(`/cult/${id}`).then(() => {
-        const contentsFilters = contents.filter(content => content.id !== id);
-
-        setContents(contentsFilters);
+      const dataAdd = {
+        contents: [id],
+      };
+      api.post(`/cult`, dataAdd).then(() => {
+        navigation.navigate('Cult');
       });
     },
-    [contents],
+    [navigation],
   );
-
-  const handleAddContents = useCallback(() => {
-    navigation.navigate('SelectContent');
-  }, [navigation]);
 
   return (
     <ScrollView style={style.containerScroll}>
@@ -60,12 +48,11 @@ const Cult: React.FC = () => {
         <View style={style.header}>
           <Image source={require('../../assets/logo.png')} />
         </View>
-        <Text style={style.textHeader}>Transmissão ao vivo</Text>
       </View>
       <View style={{ flex: 1, alignItems: 'center' }}>
         <View style={style.headerTable}>
           <Text style={[style.textTitleTable, { flex: 1 }]}>
-            Selecione o conteúdo para transmitir:
+            Selecione o conteúdo para transmissão:
           </Text>
           <Text style={[style.textTitleTable, { marginHorizontal: 20 }]}>
             Total: {contents.length}
@@ -76,26 +63,15 @@ const Cult: React.FC = () => {
             <Text style={style.textIdItem}>{content.id}</Text>
             <TouchableOpacity
               style={{ flex: 1, height: 70, justifyContent: 'center' }}
-              onPress={() => handleSetContentLive(content.content_id)}
+              onPress={() => handleSetContentLive(content.id)}
             >
               <Text style={style.textDescriptionItem}>{content.title}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleRemoveContentCult(content.id)}
-            >
-              <Text style={style.textExcludeItem}>Excluir</Text>
-            </TouchableOpacity>
           </View>
         ))}
-        <TouchableOpacity
-          onPress={handleAddContents}
-          style={style.buttonAddContent}
-        >
-          <Text style={style.textButtonAddContent}>+</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
 
-export default Cult;
+export default SelectContent;
