@@ -3,7 +3,7 @@ import { Alert, View } from 'react-native';
 
 import io from 'socket.io-client';
 
-const socket = io('http://192.168.1.7:3333');
+const socket = io('http://192.168.1.9:3333');
 
 interface Live {
   positionSlide: number;
@@ -11,10 +11,14 @@ interface Live {
   visible: boolean;
 }
 
+interface DataServer {
+  positionSlide: string;
+  slides: string[];
+  visible: 'true' | 'false';
+}
+
 interface SocketContextData {
   contentLive: Live;
-  visibility: boolean;
-  numberSlideShow: number;
 }
 
 const SocketContext = createContext<SocketContextData>({ connection: socket });
@@ -26,40 +30,18 @@ export const SocketProvider: React.FC = ({ children }) => {
     visible: false,
   });
 
-  const [visibility, setVisibility] = useState(false);
-
-  const [numberSlideShow, setNumberSlideShow] = useState(0);
   useEffect(() => {
-    socket.on('update-content', function ({
-      positionSlide,
-      visible,
-      slides,
-    }: Live) {
-      // if (data.slides.length > 0) {
-      //   setSlideActive(data.positionSlide);
-      //   setContentLive(data.slides);
-      //   setVisibilityLive(data.visible);
-      // }
-      if (slides.length > 0) {
+    socket.on(
+      'update-content',
+      ({ positionSlide, visible, slides }: DataServer) => {
         setContentLive({
-          positionSlide,
+          positionSlide: Number(positionSlide),
           slides,
-          visible,
+          visible: visible === 'true',
         });
-      }
-      console.log('updateContent');
-    });
-
-    socket.on('next-slide', function (nextSlideNumber: number) {
-      console.log('recebi next', nextSlideNumber);
-      // setSlideActive(nextSlideNumber);
-      setNumberSlideShow(nextSlideNumber);
-    });
-
-    socket.on('visible-content', function (visibilityLive: boolean) {
-      console.log('recebi visible', visibilityLive);
-      setVisibility(visibilityLive);
-    });
+        console.log('updateContent');
+      },
+    );
 
     return () => {
       socket.removeAllListeners();
@@ -67,9 +49,7 @@ export const SocketProvider: React.FC = ({ children }) => {
   }, []);
 
   return (
-    <SocketContext.Provider
-      value={{ contentLive, visibility, numberSlideShow }}
-    >
+    <SocketContext.Provider value={{ contentLive }}>
       {children}
     </SocketContext.Provider>
   );

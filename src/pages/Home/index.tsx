@@ -21,6 +21,7 @@ const Home = () => {
         <Button
           text="EDITAR CONTEÚDO"
           onPress={() => {}}
+          disabled
           icon="edit-2"
           style={{ marginTop: 20 }}
         />

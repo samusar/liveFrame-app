@@ -12,25 +12,20 @@ import style from './styles';
 
 const Live: React.FC = () => {
   const navigation = useNavigation();
-  const [contentLiveState, setContentLiveState] = useState<string[]>([]);
-  const [slideActive, setSlideActive] = useState(0);
-  const [visibilityLive, setVisibilityLive] = useState(false);
 
-  const { contentLive, visibility, numberSlideShow } = useSocket();
+  const [contentLiveState, setContentLiveState] = useState<string[]>([]);
+
+  const { contentLive } = useSocket();
 
   const alterSlide = useCallback(
     async (slideNumber: number) => {
+      console.log('trocar para', slideNumber);
       if (slideNumber >= 0 && slideNumber < contentLiveState.length) {
         await api.get(`/live/slide/${slideNumber}`);
       }
     },
     [contentLiveState],
   );
-
-  const resetPresentation = useCallback(async () => {
-    await api.get(`/live/slide/0`);
-    await api.get(`/live?visibility=false`);
-  }, []);
 
   const alterVisibility = useCallback(async visibilityParams => {
     await api.get(`/live?visibility=${visibilityParams}`);
@@ -45,22 +40,8 @@ const Live: React.FC = () => {
       });
 
       setContentLiveState(slides);
-      setSlideActive(contentLive.positionSlide);
-      setVisibilityLive(contentLive.visible);
     }
-
-    return () => {
-      resetPresentation();
-    };
-  }, [contentLive, resetPresentation]);
-
-  useEffect(() => {
-    setVisibilityLive(visibility);
-  }, [visibility]);
-
-  useEffect(() => {
-    setSlideActive(numberSlideShow);
-  }, [numberSlideShow]);
+  }, [contentLive]);
 
   return (
     <ScrollView style={style.containerScroll}>
@@ -91,8 +72,8 @@ const Live: React.FC = () => {
       <View style={style.previewContainer}>
         <View style={style.previewContent}>
           <Text style={style.textPreview}>
-            {contentLiveState[slideActive] && visibilityLive
-              ? contentLiveState[slideActive]
+            {contentLiveState[contentLive.positionSlide] && contentLive.visible
+              ? contentLiveState[contentLive.positionSlide]
               : ''}
           </Text>
           <View style={style.bannerLive}>
@@ -103,12 +84,12 @@ const Live: React.FC = () => {
           </View>
         </View>
         <Text style={style.textIndexHeader}>
-          {slideActive + 1} /{contentLiveState.length}
+          {contentLive.positionSlide + 1} /{contentLiveState.length}
         </Text>
         <View style={style.containerOptions}>
           <TouchableOpacity
             onPress={() => {
-              alterSlide(slideActive - 1);
+              alterSlide(contentLive.positionSlide - 1);
             }}
           >
             <View style={style.btPreview}>
@@ -119,10 +100,12 @@ const Live: React.FC = () => {
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
           >
             <TouchableOpacity
-              onPress={() => alterVisibility(visibilityLive ? 'false' : 'true')}
+              onPress={() => {
+                alterVisibility(contentLive.visible ? 'false' : 'true');
+              }}
             >
               <Icon
-                name={visibilityLive ? 'eye' : 'eye-off'}
+                name={contentLive.visible ? 'eye' : 'eye-off'}
                 size={40}
                 color="#E3E3E3"
               />
@@ -130,7 +113,7 @@ const Live: React.FC = () => {
           </View>
           <TouchableOpacity
             onPress={() => {
-              alterSlide(slideActive + 1);
+              alterSlide(contentLive.positionSlide + 1);
             }}
           >
             <View style={style.btPreview}>
@@ -156,7 +139,11 @@ const Live: React.FC = () => {
               <View style={{ marginRight: 20 }}>
                 <RadioButton
                   value={slide}
-                  status={index === slideActive ? 'checked' : 'unchecked'}
+                  status={
+                    index === contentLive.positionSlide
+                      ? 'checked'
+                      : 'unchecked'
+                  }
                   onPress={() => alterSlide(index)}
                   color="#FF7A00"
                   uncheckedColor="#A4A4A4"
